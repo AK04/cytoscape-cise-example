@@ -1,0 +1,184 @@
+<html>
+<head>
+     <!-- This style is required for cytoscape to work -->
+    <style>
+        #cy {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0px;
+            left: 0px;
+        }
+    </style>
+
+    <title>Cytoscape GnT</title>
+
+    <!-- Cytoscape -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.19.0/cytoscape.min.js"></script>
+
+    <!-- src for cise layout -->
+    <script src="https://unpkg.com/layout-base@1.0.2/layout-base.js"></script>
+    <script src="https://unpkg.com/avsdf-base/avsdf-base.js"></script>
+    <script src="https://unpkg.com/cose-base@1.0.3/cose-base.js"></script>
+    <script src="./cytoscape-cise.js"></script>
+
+</head>
+
+<body>
+
+    <div id="cy"></div>
+
+    <script>
+
+        // Change name and color of head node here
+        var headName = 'jisha';
+        var headColor = '#f4bfc1';
+
+        var firstDepthArray = [
+            ["0", "1" , "2"],
+            ["3", "4" , "5"],
+            ["6", "7" , "8"],
+            ["9"]
+        ];
+
+        var secondDepthArray = [
+            ["11", "12", "13"],
+            ["14"],
+            ["15"],
+            ["16", "17"],
+        ];
+
+        // clusterArray is the array of clusters.
+        var clusterArray = [...firstDepthArray, ...secondDepthArray];
+
+        // Space between the nodes of each cluster
+        var clusterSeparation = 15;
+
+        // Colors have to be in Hex
+        // Each cluster will get their color in the order of the elements
+        let clusterColors = ['#756D76', '#3ac4e1', '#ad277e', '#4139dd', '#d57dba', '#8ab23c', '#8dcaa4', '#3ac4e1'];
+
+        // Function to convert hex into rgb. Cytoscape only works with rgb colors.
+        const hexToRgb = hex =>
+            hex.replace(/^#?([a-f\d])([a-f\d])([a-f\d])$/i
+             ,(m, r, g, b) => '#' + r + r + g + g + b + b)
+            .substring(1).match(/.{2}/g)
+            .map(x => parseInt(x, 16));
+
+        
+        var cy = cytoscape({
+            container: document.getElementById('cy'), 
+
+            elements: [ 
+                { 
+                    group: 'nodes',
+                    data: { id: headName }
+                }
+            ],
+
+            style: [ 
+                {
+                selector: 'node',
+                style: {
+                    'background-color': hexToRgb(headColor),
+                    'label': 'data(id)'
+                }
+                },
+
+                {
+                selector: 'edge',
+                style: {
+                    'width': 1,
+                    'line-color': '#ccc',
+                    'target-arrow-color': '#ccc',
+                    'target-arrow-shape': 'triangle',
+                    'curve-style': 'bezier'
+                }
+                }
+            ],
+
+        });
+
+
+
+        // Adding first depth
+        for(var i=0; i < firstDepthArray.length ; ++i) {
+            for(var j=0; j < firstDepthArray[i].length; j++) {
+                cy.add([
+                    {
+                        data: {id: firstDepthArray[i][j]} ,
+                    },
+                    {
+                        data: {
+                            id: headName + firstDepthArray[i][j],
+                            source: headName,
+                            target: firstDepthArray[i][j]
+                        }
+                    }
+                ]);
+            }
+        }
+
+
+
+        var attachArray = ["2", "6", "8", "9"];
+
+        // Attaching second depth
+        for(var i=0; i < secondDepthArray.length ; ++i) {
+            for(var j=0; j < secondDepthArray[i].length; j++) {
+                cy.add([
+                    {
+                        data: {
+                            id: secondDepthArray[i][j],
+                        } ,
+                    },
+                    {
+                        data: {
+                            id: attachArray[i] + secondDepthArray[i][j],
+                            source: attachArray[i],
+                            target: secondDepthArray[i][j]
+                        }
+                    }
+                ]);
+            }
+        }
+
+        // Display and hide second depth
+        for(var i=0; i < attachArray.length; ++i) {
+
+            
+
+            cy.on('tap', '[id = \"' + attachArray[i] + '\"]' , function() {
+                if (this.scratch().restData == null) {
+                // Save node data and remove
+                this.scratch({
+                    restData: this.successors().targets().remove()
+                });
+                } else {
+                // Restore the removed nodes from saved data
+                this.scratch().restData.restore();
+                this.scratch({
+                    restData: null
+                });
+                }
+            });
+        }
+
+
+        for(var i = 0; i < clusterArray.length; i++) {
+            for(var j = 0; j < clusterArray[i].length; j++) {
+                cy.nodes("[id = \"" + clusterArray[i][j] + "\"]").style('background-color', hexToRgb(clusterColors[i]));
+            }
+        }
+
+        cy.layout({
+            name: 'cise',
+            clusters: clusterArray,
+            nodeSeparation: clusterSeparation,
+        }).run();
+
+    </script>
+
+</body>
+
+</html>
