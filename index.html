@@ -34,19 +34,37 @@
         var headName = 'jisha';
         var headColor = '#f4bfc1';
 
+        function randomArrayGenerator(arrayNumber) {
+            let i = 0;
+            let arrayOfArrays = [];
+            for(var j=0; j< arrayNumber; ++j) {
+                arrayOfArrays.push([`${i}`,`${i+1}`,`${i+2}`])
+                i = i+3;
+            }
+            return arrayOfArrays;
+        }
+
+        // Array for first depth
+        var firstDepthArray = randomArrayGenerator(100);
+        
+        /*
         var firstDepthArray = [
             ["0", "1" , "2"],
             ["3", "4" , "5"],
             ["6", "7" , "8"],
-            ["9"]
+            ["9"],
         ];
+        */
 
         var secondDepthArray = [
-            ["11", "12", "13"],
+            ["11", "12"],
             ["14"],
             ["15"],
             ["16", "17"],
+            ["13"]
         ];
+
+        var attachArray = ["2", "2", "6", "8", "9"];
 
         // clusterArray is the array of clusters.
         var clusterArray = [...firstDepthArray, ...secondDepthArray];
@@ -100,83 +118,107 @@
         });
 
 
-
+        
         // Adding first depth
         for(var i=0; i < firstDepthArray.length ; ++i) {
             for(var j=0; j < firstDepthArray[i].length; j++) {
                 cy.add([
                     {
+                        group: 'nodes',
                         data: {id: firstDepthArray[i][j]} ,
                     },
                     {
+                        group: 'edges',
                         data: {
-                            id: headName + firstDepthArray[i][j],
+                            id: headName + "x" + firstDepthArray[i][j],
                             source: headName,
                             target: firstDepthArray[i][j]
                         }
                     }
                 ]);
+
+                cy.nodes("[id = \"" + firstDepthArray[i][j] + "\"]").style('width', '15px');
+                cy.nodes("[id = \"" + firstDepthArray[i][j] + "\"]").style('height', '15px');
+                cy.nodes("[id = \"" + firstDepthArray[i][j] + "\"]").style('font-size', '12px');
+
             }
         }
-
-
-
-        var attachArray = ["2", "6", "8", "9"];
+        
 
         // Attaching second depth
         for(var i=0; i < secondDepthArray.length ; ++i) {
             for(var j=0; j < secondDepthArray[i].length; j++) {
                 cy.add([
                     {
+                        group: 'nodes',
                         data: {
                             id: secondDepthArray[i][j],
                         } ,
                     },
                     {
+                        group: 'edges',
                         data: {
-                            id: attachArray[i] + secondDepthArray[i][j],
+                            id: attachArray[i] + "x" + secondDepthArray[i][j],
                             source: attachArray[i],
                             target: secondDepthArray[i][j]
                         }
                     }
                 ]);
+                // second depth styling
+                cy.nodes("[id = \"" + secondDepthArray[i][j] + "\"]").style('display', 'none');
+                cy.nodes("[id = \"" + secondDepthArray[i][j] + "\"]").style('width', '15px');
+                cy.nodes("[id = \"" + secondDepthArray[i][j] + "\"]").style('height', '15px');
+                cy.nodes("[id = \"" + secondDepthArray[i][j] + "\"]").style('font-size', '12px');
             }
         }
 
-        // Display and hide second depth
-        for(var i=0; i < attachArray.length; ++i) {
+        
+        //On tapping each parent node
+        var uniqueAttachArray = [...new Set(attachArray)];
 
-            
+        for(var i=0; i < uniqueAttachArray.length; ++i) {
 
-            cy.on('tap', '[id = \"' + attachArray[i] + '\"]' , function() {
-                if (this.scratch().restData == null) {
-                // Save node data and remove
-                this.scratch({
-                    restData: this.successors().targets().remove()
-                });
-                } else {
-                // Restore the removed nodes from saved data
-                this.scratch().restData.restore();
-                this.scratch({
-                    restData: null
-                });
+            cy.on('tap', '[id = \"' + uniqueAttachArray[i] + '\"]' , function() { 
+
+                if(this.successors().targets().visible()) {
+                    this.successors().targets().style('display', 'none');
+                    cy.layout({
+                        name: 'cise',
+                        clusters: clusterArray,
+                        nodeSeparation: clusterSeparation,
+                    }).run();                   
+                }   
+                else {
+                    this.successors().targets().style('display', 'element');
+                    cy.layout({
+                        name: 'cise',
+                        clusters: clusterArray,
+                        nodeSeparation: clusterSeparation,
+                    }).run();
                 }
             });
+ 
         }
 
-
+        // Coloring each node in every cluster
+        var colorIndex = 0;
         for(var i = 0; i < clusterArray.length; i++) {
             for(var j = 0; j < clusterArray[i].length; j++) {
-                cy.nodes("[id = \"" + clusterArray[i][j] + "\"]").style('background-color', hexToRgb(clusterColors[i]));
+                cy.nodes("[id = \"" + clusterArray[i][j] + "\"]").style('background-color', hexToRgb(clusterColors[colorIndex]));
             }
+            colorIndex++;
+            if(colorIndex >= clusterColors.length)
+                colorIndex = 0;
         }
 
+        
         cy.layout({
             name: 'cise',
             clusters: clusterArray,
             nodeSeparation: clusterSeparation,
         }).run();
-
+        
+       
     </script>
 
 </body>
