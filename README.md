@@ -1,3 +1,3 @@
 # cytoscape-cise-example
 
-Example for cytoscape-cise.
+Can be viewed here - https://ak04.github.io/cytoscape-cise-example/
